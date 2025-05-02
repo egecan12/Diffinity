@@ -9,8 +9,8 @@ import SwiftUI
 import AppKit
 
 struct ContentView: View {
-    @State private var leftText = "Enter text to compare..."
-    @State private var rightText = "Enter text to compare..."
+    @State private var leftText = ""
+    @State private var rightText = ""
     @AppStorage("isDarkMode") private var isDarkMode = false
     @State private var isChecking = false
     @State private var diffStats = DiffStats()
@@ -42,8 +42,8 @@ struct ContentView: View {
                     
                     HStack {
                         Button(action: {
-                            leftText = "Enter text to compare..."
-                            rightText = "Enter text to compare..."
+                            leftText = ""
+                            rightText = ""
                             isChecking = false
                         }) {
                             Text("Clear")
@@ -126,20 +126,9 @@ struct ContentView: View {
                     HStack(spacing: 0) {
                         // Original text editor
                         VStack {
-                            if leftText == "Enter text to compare..." {
-                                TextEditor(text: $leftText)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(8)
-                                    .onTapGesture {
-                                        if leftText == "Enter text to compare..." {
-                                            leftText = ""
-                                        }
-                                    }
-                            } else {
-                                TextEditor(text: $leftText)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(8)
-                            }
+                            TextEditor(text: $leftText)
+                                .font(.system(.body, design: .monospaced))
+                                .padding(8)
                         }
                         .frame(minHeight: 200)
                         .background(Color(NSColor.textBackgroundColor))
@@ -154,20 +143,9 @@ struct ContentView: View {
                         
                         // Changed text editor
                         VStack {
-                            if rightText == "Enter text to compare..." {
-                                TextEditor(text: $rightText)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(8)
-                                    .onTapGesture {
-                                        if rightText == "Enter text to compare..." {
-                                            rightText = ""
-                                        }
-                                    }
-                            } else {
-                                TextEditor(text: $rightText)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(8)
-                            }
+                            TextEditor(text: $rightText)
+                                .font(.system(.body, design: .monospaced))
+                                .padding(8)
                         }
                         .frame(minHeight: 200)
                         .background(Color(NSColor.textBackgroundColor))
@@ -183,8 +161,8 @@ struct ContentView: View {
                 // Bottom action button
                 Button(action: {
                     withAnimation {
-                        // If both text fields have placeholder text, load sample text for testing
-                        if leftText == "Enter text to compare..." && rightText == "Enter text to compare..." {
+                        // If both text fields are empty, load sample text for testing
+                        if leftText.isEmpty && rightText.isEmpty {
                             leftText = sampleLeftText
                             rightText = sampleRightText
                             // Wait a moment before checking
