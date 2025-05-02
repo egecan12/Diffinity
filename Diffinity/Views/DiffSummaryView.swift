@@ -9,7 +9,6 @@ struct DiffSummaryView: View {
     @State private var diffPairs: [DiffPair] = []
     @State private var removals: Int = 0
     @State private var additions: Int = 0
-    @State private var modifications: Int = 0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -21,17 +20,6 @@ struct DiffSummaryView: View {
                             .fill(Color.red)
                             .frame(width: 16, height: 16)
                         Text("\(removals) removals")
-                            .foregroundColor(.primary)
-                            .font(.system(size: 15, weight: .medium))
-                    }
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color.orange)
-                            .frame(width: 16, height: 16)
-                        Text("\(modifications) modifications")
                             .foregroundColor(.primary)
                             .font(.system(size: 15, weight: .medium))
                     }
@@ -97,7 +85,15 @@ struct DiffSummaryView: View {
         )
         .onChange(of: isChecking) { newValue in
             if newValue {
-                computeDiff()
+                // Clear previous results first
+                diffPairs = []
+                removals = 0
+                additions = 0
+                
+                // Force a slight delay to ensure UI updates
+                DispatchQueue.main.async {
+                    computeDiff()
+                }
             }
         }
         .onAppear {
@@ -113,7 +109,6 @@ struct DiffSummaryView: View {
             diffPairs = []
             removals = 0
             additions = 0
-            modifications = 0
             return
         }
         
@@ -122,7 +117,6 @@ struct DiffSummaryView: View {
         // Count statistics
         let addedLines = result.lines.filter { $0.type == .added }.count
         let removedLines = result.lines.filter { $0.type == .removed }.count
-        let modifiedLines = result.lines.filter { $0.type == .modified }.count
         
         // Create line pairs by matching up corresponding lines
         var pairs: [DiffPair] = []
@@ -193,7 +187,6 @@ struct DiffSummaryView: View {
         self.diffPairs = pairs
         self.removals = removedLines
         self.additions = addedLines
-        self.modifications = modifiedLines
     }
 }
 

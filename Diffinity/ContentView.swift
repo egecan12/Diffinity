@@ -49,39 +49,9 @@ struct ContentView: View {
                             Text("Clear")
                                 .frame(width: 80)
                                 .padding(.vertical, 8)
-                                .background(Color(NSColor.controlBackgroundColor))
+                                .foregroundColor(.white)
+                                .background(Color.blue)
                                 .cornerRadius(8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Button(action: {
-                            // Save action would go here
-                        }) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.down")
-                                Text("Save")
-                            }
-                            .frame(width: 100)
-                            .padding(.vertical, 8)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Button(action: {
-                            // Load sample text for testing
-                            leftText = sampleLeftText
-                            rightText = sampleRightText
-                        }) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share")
-                            }
-                            .frame(width: 100)
-                            .padding(.vertical, 8)
-                            .foregroundColor(.white)
-                            .background(Color.green)
-                            .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -160,18 +130,21 @@ struct ContentView: View {
                 
                 // Bottom action button
                 Button(action: {
-                    withAnimation {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        // First reset isChecking to hide the current diff view
+                        isChecking = false
+                        
                         // If both text fields are empty, load sample text for testing
                         if leftText.isEmpty && rightText.isEmpty {
                             leftText = sampleLeftText
                             rightText = sampleRightText
-                            // Wait a moment before checking
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        }
+                        
+                        // Wait for the animation to complete before showing results
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
                                 isChecking = true
                             }
-                        } else {
-                            // When button is clicked, trigger diff checking
-                            isChecking = true
                         }
                     }
                 }) {
