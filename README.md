@@ -1,4 +1,5 @@
-# Diffinity - Modern Text Comparison Tool
+# Diffinity - Modern Text Comparison Tool 
+<img width="64" alt="Diffinity icon" src="https://github.com/user-attachments/assets/e3f77fba-66a5-49ab-b461-c0cdb5709a94"/>
 
 <div align="center">
 
@@ -7,9 +8,6 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
 A modern text comparison tool for macOS built with SwiftUI, featuring real-time diff highlighting and a native user interface.
-
-<img width="64" alt="Diffinity icon" src="https://github.com/user-attachments/assets/e3f77fba-66a5-49ab-b461-c0cdb5709a94"/>
-
 
 ![icon-banner](https://github.com/user-attachments/assets/f8510704-d282-4222-b15a-79933b7ee5e8)
 
