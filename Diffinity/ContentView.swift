@@ -122,6 +122,7 @@ struct ContentView: View {
                             if leftText == "Enter text to compare..." {
                                 TextEditor(text: $leftText)
                                     .font(.system(.body, design: .monospaced))
+                                    .padding(8)
                                     .onTapGesture {
                                         if leftText == "Enter text to compare..." {
                                             leftText = ""
@@ -130,20 +131,26 @@ struct ContentView: View {
                             } else {
                                 TextEditor(text: $leftText)
                                     .font(.system(.body, design: .monospaced))
+                                    .padding(8)
                             }
                         }
-                        .padding(1)
+                        .frame(minHeight: 200)
                         .background(Color(NSColor.textBackgroundColor))
                         .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                        )
                         
-                        Divider()
-                            .background(Color(NSColor.separatorColor))
+                        Spacer()
+                            .frame(width: 10)
                         
                         // Changed text editor
                         VStack {
                             if rightText == "Enter text to compare..." {
                                 TextEditor(text: $rightText)
                                     .font(.system(.body, design: .monospaced))
+                                    .padding(8)
                                     .onTapGesture {
                                         if rightText == "Enter text to compare..." {
                                             rightText = ""
@@ -152,11 +159,16 @@ struct ContentView: View {
                             } else {
                                 TextEditor(text: $rightText)
                                     .font(.system(.body, design: .monospaced))
+                                    .padding(8)
                             }
                         }
-                        .padding(1)
+                        .frame(minHeight: 200)
                         .background(Color(NSColor.textBackgroundColor))
                         .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                        )
                     }
                 }
                 .padding()

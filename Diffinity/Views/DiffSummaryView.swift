@@ -12,56 +12,70 @@ struct DiffSummaryView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if isChecking && !diffLines.isEmpty {
+            if isChecking {
+                // Header with stats
                 HStack {
-                    Label("\(removals) removals", systemImage: "minus.circle.fill")
-                        .foregroundColor(.red)
-                        .font(.system(size: 14, weight: .medium))
-                    
-                    Text("Copy")
-                        .foregroundColor(.secondary)
-                        .font(.system(size: 14))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(4)
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 16, height: 16)
+                        Text("\(removals) removals")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 15, weight: .medium))
+                        
+                        Text("Copy")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(4)
+                    }
                     
                     Spacer()
                     
-                    Label("\(additions) additions", systemImage: "plus.circle.fill")
-                        .foregroundColor(.green)
-                        .font(.system(size: 14, weight: .medium))
-                    
-                    Text("Copy")
-                        .foregroundColor(.secondary)
-                        .font(.system(size: 14))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(4)
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 16, height: 16)
+                        Text("\(additions) additions")
+                            .foregroundColor(.primary)
+                            .font(.system(size: 15, weight: .medium))
+                        
+                        Text("Copy")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 14))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(4)
+                    }
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 
                 Divider()
                 
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(diffLines) { diffLine in
-                            DiffLineView(diffLine: diffLine)
+                if diffLines.isEmpty {
+                    Text("No differences found")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 14))
+                        .padding()
+                } else {
+                    // Diff content
+                    ScrollView(.vertical, showsIndicators: true) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(diffLines) { diffLine in
+                                DiffLineView(diffLine: diffLine)
+                            }
                         }
                     }
-                    .padding(.vertical, 8)
+                    .frame(maxHeight: 150)
+                    .padding(.vertical, 4)
                 }
-                .frame(maxHeight: 150)
-            } else if isChecking {
-                Text("No differences found")
-                    .foregroundColor(.secondary)
-                    .font(.system(size: 14))
-                    .padding()
             }
         }
-        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.2))
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
@@ -133,11 +147,6 @@ struct DiffSummaryView: View {
         self.diffLines = displayLines
         self.removals = removeCount
         self.additions = addCount
-        
-        // Debug output
-        print("Diff computed: \(removeCount) removals, \(addCount) additions")
-        print("Left text: \(leftText)")
-        print("Right text: \(rightText)")
     }
 }
 
@@ -155,48 +164,54 @@ struct DiffLineView: View {
     let diffLine: DiffLineDisplay
     
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Left line number and text
-            HStack(spacing: 0) {
-                Text(diffLine.leftLineNumber > 0 ? "\(diffLine.leftLineNumber)" : "")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundColor(.secondary)
-                    .frame(width: 30, alignment: .trailing)
-                    .padding(.trailing, 8)
-                
-                if diffLine.type == .removed {
+        HStack(alignment: .center, spacing: 0) {
+            // Left side
+            if diffLine.type == .removed {
+                HStack(spacing: 4) {
+                    Text("\(diffLine.leftLineNumber)")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .frame(width: 20, alignment: .trailing)
+                        .padding(.leading, 16)
+                    
                     Text(diffLine.leftText)
                         .font(.system(.body, design: .monospaced))
+                        .lineLimit(1)
                         .padding(.vertical, 4)
                         .padding(.horizontal, 8)
                         .background(Color.red.opacity(0.2))
                         .cornerRadius(4)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Spacer()
+                    .frame(maxWidth: .infinity)
             }
-            .frame(width: 250, alignment: .leading)
-            .padding(.horizontal, 4)
             
-            // Right line number and text
-            HStack(spacing: 0) {
-                Text(diffLine.rightLineNumber > 0 ? "\(diffLine.rightLineNumber)" : "")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundColor(.secondary)
-                    .frame(width: 30, alignment: .trailing)
-                    .padding(.trailing, 8)
-                
-                if diffLine.type == .added {
+            // Right side
+            if diffLine.type == .added {
+                HStack(spacing: 4) {
+                    Text("\(diffLine.rightLineNumber)")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .frame(width: 20, alignment: .trailing)
+                        .padding(.leading, 16)
+                    
                     Text(diffLine.rightText)
                         .font(.system(.body, design: .monospaced))
+                        .lineLimit(1)
                         .padding(.vertical, 4)
                         .padding(.horizontal, 8)
                         .background(Color.green.opacity(0.2))
                         .cornerRadius(4)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Spacer()
+                    .frame(maxWidth: .infinity)
             }
-            .frame(width: 250, alignment: .leading)
-            .padding(.horizontal, 4)
         }
-        .padding(.vertical, 2)
+        .frame(height: 36)
     }
 }
 
