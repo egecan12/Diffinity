@@ -11,6 +11,10 @@ A modern text comparison tool for macOS built with SwiftUI, featuring real-time 
 
 ![icon-banner](https://github.com/user-attachments/assets/f8510704-d282-4222-b15a-79933b7ee5e8)
 
+## Download 
+
+[Diffinity v2.zip](https://github.com/user-attachments/files/20018564/Diffinity.v2.zip)
+
 
 <img width="1134" alt="Diffinity ss" src="https://github.com/user-attachments/assets/6a430edb-339c-4779-89ba-0c7a8dedd5db" />
 
