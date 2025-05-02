@@ -13,11 +13,16 @@ A modern text comparison tool for macOS built with SwiftUI, featuring real-time 
 
 ## Download 
 
-[Diffinity v2.zip](https://github.com/user-attachments/files/20018564/Diffinity.v2.zip)
+[![Download Diffinity](https://img.shields.io/badge/Download-Diffinity%20v2-2ea44f?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/user-attachments/files/20018564/Diffinity.v2.zip)
 
+> ⚠️ **Note**: Since the app is not signed with an Apple Developer certificate, macOS Gatekeeper may show a security warning. To open the app:
+> 1. Right-click (or Control-click) on the app
+> 2. Select "Open" from the context menu
+> 3. Click "Open" in the security dialog
+> 
+> This is a one-time process. After this, you can open the app normally.
 
 <img width="1134" alt="Diffinity ss" src="https://github.com/user-attachments/assets/6a430edb-339c-4779-89ba-0c7a8dedd5db" />
-
 
 </div>
 
