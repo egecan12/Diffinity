@@ -124,9 +124,18 @@ struct DiffTextView: NSViewRepresentable {
         for line in diffResult.lines where line.type != .unchanged {
             let range = (text as NSString).range(of: line.text)
             if range.location != NSNotFound {
-                let backgroundColor = line.type == .removed ?
-                    NSColor.systemRed.withAlphaComponent(0.15) :
-                    NSColor.systemGreen.withAlphaComponent(0.15)
+                var backgroundColor: NSColor
+                
+                switch line.type {
+                case .removed:
+                    backgroundColor = NSColor.systemRed.withAlphaComponent(0.15)
+                case .added:
+                    backgroundColor = NSColor.systemGreen.withAlphaComponent(0.15)
+                case .modified:
+                    backgroundColor = NSColor.systemOrange.withAlphaComponent(0.15)
+                default:
+                    backgroundColor = NSColor.clear
+                }
                 
                 attributedString.addAttribute(.backgroundColor, value: backgroundColor, range: range)
                 
@@ -137,9 +146,18 @@ struct DiffTextView: NSViewRepresentable {
                     )
                     
                     if changeRange.location + changeRange.length <= text.utf16.count {
-                        let foregroundColor = line.type == .removed ?
-                            NSColor.systemRed :
-                            NSColor(calibratedRed: 0, green: 0.6, blue: 0, alpha: 1.0)
+                        var foregroundColor: NSColor
+                        
+                        switch change.type {
+                        case .removed:
+                            foregroundColor = NSColor.systemRed
+                        case .added:
+                            foregroundColor = NSColor(calibratedRed: 0, green: 0.6, blue: 0, alpha: 1.0)
+                        case .modified:
+                            foregroundColor = NSColor.systemOrange
+                        default:
+                            foregroundColor = NSColor.labelColor
+                        }
                         
                         attributedString.addAttributes([
                             .foregroundColor: foregroundColor,

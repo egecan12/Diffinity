@@ -185,7 +185,7 @@ struct ContentView: View {
                                 isChecking = true
                             }
                         } else {
-                            isChecking.toggle()
+                            isChecking = true  // Always set to true to trigger diff check
                         }
                     }
                 }) {

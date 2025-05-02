@@ -9,11 +9,13 @@ struct DiffResult {
 struct DiffStats {
     var removals: Int
     var additions: Int
+    var modifications: Int
     var totalLines: Int
     
-    init(removals: Int = 0, additions: Int = 0, totalLines: Int = 0) {
+    init(removals: Int = 0, additions: Int = 0, modifications: Int = 0, totalLines: Int = 0) {
         self.removals = removals
         self.additions = additions
+        self.modifications = modifications
         self.totalLines = totalLines
     }
 }
@@ -35,6 +37,7 @@ enum DiffLineType {
     case unchanged
     case added
     case removed
+    case modified
     
     var color: Color {
         switch self {
@@ -44,6 +47,8 @@ enum DiffLineType {
             return Color.green.opacity(0.15)
         case .removed:
             return Color.red.opacity(0.15)
+        case .modified:
+            return Color.orange.opacity(0.15)
         }
     }
     
@@ -55,6 +60,8 @@ enum DiffLineType {
             return Color.green
         case .removed:
             return Color.red
+        case .modified:
+            return Color.orange
         }
     }
 }
@@ -90,23 +97,47 @@ class DiffHighlighter {
                         newLine: newLines[j]
                     )
                     
-                    // Removed line
-                    result.append(DiffLine(
-                        text: oldLines[i],
-                        type: .removed,
-                        lineNumber: i + 1,
-                        changes: changes.filter { $0.type == .removed }
-                    ))
-                    stats.removals += 1
+                    let hasSignificantChanges = changes.contains { $0.type != .unchanged }
+                    let isSimilar = calcSimilarity(oldLines[i], newLines[j]) > 0.5
                     
-                    // Added line
-                    result.append(DiffLine(
-                        text: newLines[j],
-                        type: .added,
-                        lineNumber: j + 1,
-                        changes: changes.filter { $0.type == .added }
-                    ))
-                    stats.additions += 1
+                    if hasSignificantChanges && isSimilar {
+                        // Lines are similar enough to be considered modified versions
+                        stats.modifications += 1
+                        
+                        // Add a modified line with the old text and character-level changes
+                        result.append(DiffLine(
+                            text: oldLines[i],
+                            type: .modified,
+                            lineNumber: i + 1,
+                            changes: changes.filter { $0.type == .removed }
+                        ))
+                        
+                        // Also add the new version
+                        result.append(DiffLine(
+                            text: newLines[j],
+                            type: .modified,
+                            lineNumber: j + 1,
+                            changes: changes.filter { $0.type == .added }
+                        ))
+                    } else {
+                        // Removed line
+                        result.append(DiffLine(
+                            text: oldLines[i],
+                            type: .removed,
+                            lineNumber: i + 1,
+                            changes: changes.filter { $0.type == .removed }
+                        ))
+                        stats.removals += 1
+                        
+                        // Added line
+                        result.append(DiffLine(
+                            text: newLines[j],
+                            type: .added,
+                            lineNumber: j + 1,
+                            changes: changes.filter { $0.type == .added }
+                        ))
+                        stats.additions += 1
+                    }
                     
                     i += 1
                     j += 1
@@ -135,6 +166,23 @@ class DiffHighlighter {
         }
         
         return DiffResult(lines: result, stats: stats)
+    }
+    
+    private static func calcSimilarity(_ s1: String, _ s2: String) -> Double {
+        let len1 = s1.count
+        let len2 = s2.count
+        
+        if len1 == 0 || len2 == 0 {
+            return 0.0
+        }
+        
+        // Calculate common characters
+        let set1 = Set(s1)
+        let set2 = Set(s2)
+        let common = set1.intersection(set2)
+        
+        // Calculate similarity based on common characters
+        return Double(common.count) / Double(max(len1, len2))
     }
     
     private static func findCharacterChanges(oldLine: String, newLine: String) -> [CharacterChange] {
