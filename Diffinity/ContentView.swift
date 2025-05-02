@@ -26,56 +26,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Icon image at the top
-                Image("AppLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 60)
-                    .padding(.vertical, 8)
-                
-                // Header with title and controls
-                VStack {
-                    Text(documentTitle)
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
-                    
-                    HStack {
-                        Button(action: {
-                            leftText = ""
-                            rightText = ""
-                            isChecking = false
-                        }) {
-                            Text("Clear")
-                                .frame(width: 80)
-                                .padding(.vertical, 8)
-                                .foregroundColor(.white)
-                                .background(Color.blue)
-                                .cornerRadius(8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Spacer()
-                        
-                        ThemeToggleButton(isDarkMode: $isDarkMode)
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                }
-                
-                // Diff summary view
-                if isChecking {
-                    DiffSummaryView(
-                        leftText: $leftText,
-                        rightText: $rightText,
-                        isChecking: $isChecking
-                    )
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .transition(.opacity)
-                }
-                
-                // Main content
+                // Main content moved to the top for more space
                 VStack(spacing: 0) {
                     HStack {
                         Text("Original text")
@@ -128,37 +79,85 @@ struct ContentView: View {
                 }
                 .padding()
                 
-                // Bottom action button
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        // First reset isChecking to hide the current diff view
-                        isChecking = false
+                // Diff summary view - with more space
+                if isChecking {
+                    DiffSummaryView(
+                        leftText: $leftText,
+                        rightText: $rightText,
+                        isChecking: $isChecking
+                    )
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .transition(.opacity)
+                    .frame(maxHeight: .infinity) // Allow it to take more space
+                }
+                
+                // Bottom section with logo and controls
+                VStack(spacing: 8) {
+                    Divider()
+                    
+                    HStack {
+                        // Icon image moved to the bottom
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 40)
                         
-                        // If both text fields are empty, load sample text for testing
-                        if leftText.isEmpty && rightText.isEmpty {
-                            leftText = sampleLeftText
-                            rightText = sampleRightText
-                        }
+                        Spacer()
                         
-                        // Wait for the animation to complete before showing results
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isChecking = true
+                        // Controls
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                leftText = ""
+                                rightText = ""
+                                isChecking = false
+                            }) {
+                                Text("Clear")
+                                    .frame(width: 80)
+                                    .padding(.vertical, 8)
+                                    .foregroundColor(.white)
+                                    .background(Color.blue)
+                                    .cornerRadius(8)
                             }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            ThemeToggleButton(isDarkMode: $isDarkMode)
+                            
+                            // Bottom action button
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    // First reset isChecking to hide the current diff view
+                                    isChecking = false
+                                    
+                                    // If both text fields are empty, load sample text for testing
+                                    if leftText.isEmpty && rightText.isEmpty {
+                                        leftText = sampleLeftText
+                                        rightText = sampleRightText
+                                    }
+                                    
+                                    // Wait for the animation to complete before showing results
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            isChecking = true
+                                        }
+                                    }
+                                }
+                            }) {
+                                Text("Check Differences")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(width: 180)
+                                    .padding(.vertical, 12)
+                                    .background(Color.green)
+                                    .cornerRadius(8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .keyboardShortcut("R", modifiers: [.command])
                         }
                     }
-                }) {
-                    Text("Check Differences")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(width: 180)
-                        .padding(.vertical, 12)
-                        .background(Color.green)
-                        .cornerRadius(8)
+                    .padding(.horizontal)
+                    .padding(.vertical, 4)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .keyboardShortcut("R", modifiers: [.command])
-                .padding(.bottom, 16)
             }
         }
     }
