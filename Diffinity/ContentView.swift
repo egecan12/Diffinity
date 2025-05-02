@@ -14,6 +14,11 @@ struct ContentView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @State private var isChecking = false
     @State private var diffStats = DiffStats()
+    @State private var documentTitle = "Untitled diff"
+    
+    // Sample texts for testing
+    private let sampleLeftText = "hi this is a\ntest document"
+    private let sampleRightText = "hii this is an\ntest document"
     
     var body: some View {
         ZStack {
@@ -21,61 +26,79 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                HStack {
-                    if isChecking {
-                        HStack(spacing: 16) {
-                            Label("\(diffStats.removals) removals", systemImage: "minus.circle.fill")
-                                .foregroundColor(.red)
-                            Label("\(diffStats.additions) additions", systemImage: "plus.circle.fill")
-                                .foregroundColor(.green)
-                            Text("\(diffStats.totalLines) lines")
-                                .foregroundColor(.secondary)
+                // Header with title and controls
+                VStack {
+                    Text(documentTitle)
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                    
+                    HStack {
+                        Button(action: {
+                            leftText = "Enter text to compare..."
+                            rightText = "Enter text to compare..."
+                            isChecking = false
+                        }) {
+                            Text("Clear")
+                                .frame(width: 80)
+                                .padding(.vertical, 8)
+                                .background(Color(NSColor.controlBackgroundColor))
+                                .cornerRadius(8)
                         }
-                        .font(.system(size: 14, weight: .medium))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(NSColor.controlBackgroundColor))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                        )
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: {
+                            // Save action would go here
+                        }) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.down")
+                                Text("Save")
+                            }
+                            .frame(width: 100)
+                            .padding(.vertical, 8)
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(8)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: {
+                            // Load sample text for testing
+                            leftText = sampleLeftText
+                            rightText = sampleRightText
+                        }) {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                Text("Share")
+                            }
+                            .frame(width: 100)
+                            .padding(.vertical, 8)
+                            .foregroundColor(.white)
+                            .background(Color.green)
+                            .cornerRadius(8)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Spacer()
+                        
+                        ThemeToggleButton(isDarkMode: $isDarkMode)
                     }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        withAnimation {
-                            isChecking.toggle()
-                        }
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: isChecking ? "checkmark.circle.fill" : "checkmark.circle")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text(isChecking ? "Checking..." : "Check Differences")
-                                .font(.system(size: 14, weight: .medium))
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(NSColor.controlBackgroundColor))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .keyboardShortcut("R", modifiers: [.command])
-                    
-                    ThemeToggleButton(isDarkMode: $isDarkMode)
-                        .padding(.leading, 8)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
                 }
-                .padding()
                 
+                // Diff summary view
+                if isChecking {
+                    DiffSummaryView(
+                        leftText: $leftText,
+                        rightText: $rightText,
+                        isChecking: $isChecking
+                    )
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .transition(.opacity)
+                }
+                
+                // Main content
                 VStack(spacing: 0) {
                     HStack {
                         Text("Original text")
@@ -94,25 +117,77 @@ struct ContentView: View {
                     }
                     
                     HStack(spacing: 0) {
-                        DiffTextView(
-                            text: $leftText,
-                            comparisonText: $rightText,
-                            side: .left,
-                            isChecking: $isChecking,
-                            diffStats: $diffStats
-                        )
+                        // Original text editor
+                        VStack {
+                            if leftText == "Enter text to compare..." {
+                                TextEditor(text: $leftText)
+                                    .font(.system(.body, design: .monospaced))
+                                    .onTapGesture {
+                                        if leftText == "Enter text to compare..." {
+                                            leftText = ""
+                                        }
+                                    }
+                            } else {
+                                TextEditor(text: $leftText)
+                                    .font(.system(.body, design: .monospaced))
+                            }
+                        }
+                        .padding(1)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(8)
+                        
                         Divider()
                             .background(Color(NSColor.separatorColor))
-                        DiffTextView(
-                            text: $rightText,
-                            comparisonText: $leftText,
-                            side: .right,
-                            isChecking: $isChecking,
-                            diffStats: $diffStats
-                        )
+                        
+                        // Changed text editor
+                        VStack {
+                            if rightText == "Enter text to compare..." {
+                                TextEditor(text: $rightText)
+                                    .font(.system(.body, design: .monospaced))
+                                    .onTapGesture {
+                                        if rightText == "Enter text to compare..." {
+                                            rightText = ""
+                                        }
+                                    }
+                            } else {
+                                TextEditor(text: $rightText)
+                                    .font(.system(.body, design: .monospaced))
+                            }
+                        }
+                        .padding(1)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .cornerRadius(8)
                     }
                 }
                 .padding()
+                
+                // Bottom action button
+                Button(action: {
+                    withAnimation {
+                        // If both text fields have placeholder text, load sample text for testing
+                        if leftText == "Enter text to compare..." && rightText == "Enter text to compare..." {
+                            leftText = sampleLeftText
+                            rightText = sampleRightText
+                            // Wait a moment before checking
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isChecking = true
+                            }
+                        } else {
+                            isChecking.toggle()
+                        }
+                    }
+                }) {
+                    Text("Find difference")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(width: 180)
+                        .padding(.vertical, 12)
+                        .background(Color.green)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .keyboardShortcut("R", modifiers: [.command])
+                .padding(.bottom, 16)
             }
         }
     }
