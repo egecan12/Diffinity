@@ -14,7 +14,7 @@ struct ContentView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
     @State private var isChecking = false
     @State private var diffStats = DiffStats()
-    @State private var documentTitle = "Untitled diff"
+    @State private var documentTitle = "Welcome to Diffinity, your offline diff checker"
     
     // Sample texts for testing
     private let sampleLeftText = "hi this is a\ntest document"
@@ -26,6 +26,13 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Icon image at the top
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+                    .padding(.vertical, 8)
+                
                 // Header with title and controls
                 VStack {
                     Text(documentTitle)
