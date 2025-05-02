@@ -220,17 +220,27 @@ struct DiffTextView: NSViewRepresentable {
             
             parent.text = textView.string
             
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                if self.parent.isChecking {
+            // Only run diff highlighting if we're manually checking
+            // (not on every text change)
+            if self.parent.isChecking && self.parent.side == .right {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
                     self.parent.highlightDifferences(in: textView)
-                } else {
-                    self.parent.clearHighlighting(in: textView)
+                    
+                    if currentRange.location <= textView.string.count {
+                        textView.setSelectedRange(currentRange)
+                        textView.scrollToVisible(visibleRect)
+                    }
                 }
-                
-                if currentRange.location <= textView.string.count {
-                    textView.setSelectedRange(currentRange)
-                    textView.scrollToVisible(visibleRect)
+            } else {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.parent.clearHighlighting(in: textView)
+                    
+                    if currentRange.location <= textView.string.count {
+                        textView.setSelectedRange(currentRange)
+                        textView.scrollToVisible(visibleRect)
+                    }
                 }
             }
         }

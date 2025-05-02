@@ -185,11 +185,12 @@ struct ContentView: View {
                                 isChecking = true
                             }
                         } else {
-                            isChecking = true  // Always set to true to trigger diff check
+                            // When button is clicked, trigger diff checking
+                            isChecking = true
                         }
                     }
                 }) {
-                    Text("Find difference")
+                    Text("Check Differences")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(width: 180)

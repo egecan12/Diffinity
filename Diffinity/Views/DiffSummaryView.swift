@@ -6,7 +6,7 @@ struct DiffSummaryView: View {
     @Binding var rightText: String
     @Binding var isChecking: Bool
     
-    @State private var diffLines: [DiffLineDisplay] = []
+    @State private var diffPairs: [DiffPair] = []
     @State private var removals: Int = 0
     @State private var additions: Int = 0
     @State private var modifications: Int = 0
@@ -52,21 +52,39 @@ struct DiffSummaryView: View {
                 
                 Divider()
                 
-                if diffLines.isEmpty {
+                if diffPairs.isEmpty {
                     Text("No differences found")
                         .foregroundColor(.secondary)
                         .font(.system(size: 14))
                         .padding()
                 } else {
+                    // Column Headers
+                    HStack {
+                        Text("Original Text")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 40)
+                        
+                        Text("Modified Text")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 40)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
+                    
+                    Divider()
+                    
                     // Diff content
                     ScrollView(.vertical, showsIndicators: true) {
                         VStack(alignment: .leading, spacing: 0) {
-                            ForEach(diffLines) { diffLine in
-                                FullTextDiffView(diffLine: diffLine)
+                            ForEach(diffPairs) { pair in
+                                DiffLineComparisonView(pair: pair)
                             }
                         }
                     }
-                    .frame(maxHeight: 300)
+                    .frame(maxHeight: 400)
                     .padding(.vertical, 4)
                 }
             }
@@ -82,16 +100,6 @@ struct DiffSummaryView: View {
                 computeDiff()
             }
         }
-        .onChange(of: leftText) { _ in
-            if isChecking {
-                computeDiff()
-            }
-        }
-        .onChange(of: rightText) { _ in
-            if isChecking {
-                computeDiff()
-            }
-        }
         .onAppear {
             if isChecking {
                 computeDiff()
@@ -102,7 +110,7 @@ struct DiffSummaryView: View {
     private func computeDiff() {
         // Don't compute if either text is just the placeholder
         if leftText == "Enter text to compare..." || rightText == "Enter text to compare..." {
-            diffLines = []
+            diffPairs = []
             removals = 0
             additions = 0
             modifications = 0
@@ -111,212 +119,153 @@ struct DiffSummaryView: View {
         
         let result = DiffHighlighter.computeDiff(between: leftText, and: rightText)
         
-        var displayLines: [DiffLineDisplay] = []
-        var addCount = 0
-        var removeCount = 0
-        var modifyCount = 0
+        // Count statistics
+        let addedLines = result.lines.filter { $0.type == .added }.count
+        let removedLines = result.lines.filter { $0.type == .removed }.count
+        let modifiedLines = result.lines.filter { $0.type == .modified }.count
         
+        // Create line pairs by matching up corresponding lines
+        var pairs: [DiffPair] = []
         let leftLines = leftText.components(separatedBy: .newlines)
         let rightLines = rightText.components(separatedBy: .newlines)
         
-        var processedLeftIndexes = Set<Int>()
-        var processedRightIndexes = Set<Int>()
+        // Create a mapping of line numbers to types
+        var leftLineTypes: [Int: DiffLineType] = [:]
+        var rightLineTypes: [Int: DiffLineType] = [:]
+        var leftLineChanges: [Int: [CharacterChange]] = [:]
+        var rightLineChanges: [Int: [CharacterChange]] = [:]
         
-        // First, process the diff lines to create our display lines
+        // Extract line type information
         for line in result.lines {
-            if line.type == .added {
-                addCount += 1
-                processedRightIndexes.insert(line.lineNumber - 1)
-                displayLines.append(DiffLineDisplay(
-                    id: line.id,
-                    leftLineNumber: 0,
-                    rightLineNumber: line.lineNumber,
-                    leftText: "",
-                    rightText: line.text,
-                    changes: line.changes,
-                    type: .added
-                ))
-            } else if line.type == .removed {
-                removeCount += 1
-                processedLeftIndexes.insert(line.lineNumber - 1)
-                displayLines.append(DiffLineDisplay(
-                    id: line.id,
-                    leftLineNumber: line.lineNumber,
-                    rightLineNumber: 0,
-                    leftText: line.text,
-                    rightText: "",
-                    changes: line.changes,
-                    type: .removed
-                ))
-            } else if line.type == .unchanged {
-                processedLeftIndexes.insert(line.lineNumber - 1)
-                
-                // Find matching line in right text
-                if line.lineNumber - 1 < leftLines.count {
-                    let leftLineText = leftLines[line.lineNumber - 1]
-                    let rightLineIndex = rightLines.firstIndex(of: leftLineText) ?? -1
-                    
-                    if rightLineIndex >= 0 {
-                        processedRightIndexes.insert(rightLineIndex)
-                        displayLines.append(DiffLineDisplay(
-                            id: line.id,
-                            leftLineNumber: line.lineNumber,
-                            rightLineNumber: rightLineIndex + 1,
-                            leftText: leftLineText,
-                            rightText: leftLineText,
-                            changes: [],
-                            type: .unchanged
-                        ))
-                    }
+            if line.lineNumber > 0 {
+                if line.type == .removed || line.type == .modified {
+                    leftLineTypes[line.lineNumber] = line.type
+                    leftLineChanges[line.lineNumber] = line.changes
+                } else if line.type == .added {
+                    rightLineTypes[line.lineNumber] = line.type
+                    rightLineChanges[line.lineNumber] = line.changes
+                } else if line.type == .unchanged {
+                    // Unchanged lines are present in both
+                    leftLineTypes[line.lineNumber] = line.type
+                    rightLineTypes[line.lineNumber] = line.type
                 }
             }
         }
         
-        // Add remaining lines that might have modifications
-        for (leftIndex, leftLine) in leftLines.enumerated() {
-            if !processedLeftIndexes.contains(leftIndex) {
-                for (rightIndex, rightLine) in rightLines.enumerated() {
-                    if !processedRightIndexes.contains(rightIndex) {
-                        // These are potentially modified versions of each other
-                        let changes = findChanges(oldLine: leftLine, newLine: rightLine)
-                        if !changes.isEmpty {
-                            modifyCount += 1
-                            processedLeftIndexes.insert(leftIndex)
-                            processedRightIndexes.insert(rightIndex)
-                            
-                            displayLines.append(DiffLineDisplay(
-                                id: UUID(),
-                                leftLineNumber: leftIndex + 1,
-                                rightLineNumber: rightIndex + 1,
-                                leftText: leftLine,
-                                rightText: rightLine,
-                                changes: changes,
-                                type: .modified
-                            ))
-                            break
-                        }
-                    }
-                }
+        // Get the maximum line count
+        let maxLines = max(leftLines.count, rightLines.count)
+        
+        // Create pairs for each line
+        for i in 0..<maxLines {
+            let leftLine = i < leftLines.count ? leftLines[i] : ""
+            let rightLine = i < rightLines.count ? rightLines[i] : ""
+            
+            let leftLineNumber = i + 1
+            let rightLineNumber = i + 1
+            
+            let leftType = leftLineTypes[leftLineNumber] ?? .unchanged
+            let rightType = rightLineTypes[rightLineNumber] ?? .unchanged
+            
+            // Determine the type for the pair
+            var pairType: DiffLineType = .unchanged
+            if leftType == .removed && rightType == .added {
+                pairType = .modified
+            } else if leftType == .removed {
+                pairType = .removed
+            } else if rightType == .added {
+                pairType = .added
+            } else if leftType == .modified || rightType == .modified {
+                pairType = .modified
             }
-        }
-        
-        // Sort by line numbers
-        displayLines.sort { 
-            if $0.leftLineNumber != 0 && $1.leftLineNumber != 0 {
-                return $0.leftLineNumber < $1.leftLineNumber
-            } else if $0.rightLineNumber != 0 && $1.rightLineNumber != 0 {
-                return $0.rightLineNumber < $1.rightLineNumber
-            } else {
-                return ($0.leftLineNumber > 0 ? $0.leftLineNumber : $0.rightLineNumber) < 
-                       ($1.leftLineNumber > 0 ? $1.leftLineNumber : $1.rightLineNumber)
-            }
-        }
-        
-        self.diffLines = displayLines
-        self.removals = removeCount
-        self.additions = addCount
-        self.modifications = modifyCount
-    }
-    
-    private func findChanges(oldLine: String, newLine: String) -> [CharacterChange] {
-        let oldChars = Array(oldLine)
-        let newChars = Array(newLine)
-        var changes: [CharacterChange] = []
-        
-        var startDiff = 0
-        while startDiff < min(oldChars.count, newChars.count) && oldChars[startDiff] == newChars[startDiff] {
-            startDiff += 1
-        }
-        
-        var endDiff = 0
-        while endDiff < min(oldChars.count - startDiff, newChars.count - startDiff) {
-            let oldIndex = oldChars.count - 1 - endDiff
-            let newIndex = newChars.count - 1 - endDiff
-            if oldChars[oldIndex] != newChars[newIndex] {
-                break
-            }
-            endDiff += 1
-        }
-        
-        if startDiff < oldChars.count {
-            changes.append(CharacterChange(
-                range: NSRange(location: startDiff, length: oldChars.count - startDiff - endDiff),
-                type: .removed
+            
+            pairs.append(DiffPair(
+                id: UUID(),
+                leftLineNumber: leftLine.isEmpty ? 0 : leftLineNumber,
+                rightLineNumber: rightLine.isEmpty ? 0 : rightLineNumber,
+                leftText: leftLine,
+                rightText: rightLine,
+                leftChanges: leftLineChanges[leftLineNumber] ?? [],
+                rightChanges: rightLineChanges[rightLineNumber] ?? [],
+                type: pairType
             ))
         }
         
-        if startDiff < newChars.count {
-            changes.append(CharacterChange(
-                range: NSRange(location: startDiff, length: newChars.count - startDiff - endDiff),
-                type: .modified
-            ))
-        }
-        
-        return changes
+        self.diffPairs = pairs
+        self.removals = removedLines
+        self.additions = addedLines
+        self.modifications = modifiedLines
     }
 }
 
-struct DiffLineDisplay: Identifiable {
+struct DiffPair: Identifiable {
     let id: UUID
     let leftLineNumber: Int
     let rightLineNumber: Int
     let leftText: String
     let rightText: String
-    let changes: [CharacterChange]
+    let leftChanges: [CharacterChange]
+    let rightChanges: [CharacterChange]
     let type: DiffLineType
 }
 
-struct FullTextDiffView: View {
-    let diffLine: DiffLineDisplay
+struct DiffLineComparisonView: View {
+    let pair: DiffPair
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .top, spacing: 16) {
-                // Left side
-                HStack(spacing: 4) {
-                    Text(diffLine.leftLineNumber > 0 ? "\(diffLine.leftLineNumber)" : " ")
-                        .font(.system(.body, design: .monospaced))
-                        .foregroundColor(.secondary)
-                        .frame(width: 25, alignment: .trailing)
-                    
-                    if !diffLine.leftText.isEmpty {
-                        HighlightedText(
-                            text: diffLine.leftText,
-                            changes: diffLine.type == .removed || diffLine.type == .modified ? diffLine.changes.filter { $0.type == .removed } : [],
-                            lineType: diffLine.type
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Spacer()
-                    }
-                }
-                .frame(maxWidth: .infinity)
+        HStack(alignment: .top, spacing: 16) {
+            // Left side
+            HStack(spacing: 4) {
+                Text(pair.leftLineNumber > 0 ? "\(pair.leftLineNumber)" : " ")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .frame(width: 25, alignment: .trailing)
                 
-                // Right side
-                HStack(spacing: 4) {
-                    Text(diffLine.rightLineNumber > 0 ? "\(diffLine.rightLineNumber)" : " ")
-                        .font(.system(.body, design: .monospaced))
-                        .foregroundColor(.secondary)
-                        .frame(width: 25, alignment: .trailing)
-                    
-                    if !diffLine.rightText.isEmpty {
-                        HighlightedText(
-                            text: diffLine.rightText,
-                            changes: diffLine.type == .added || diffLine.type == .modified ? diffLine.changes.filter { $0.type == .added || $0.type == .modified } : [],
-                            lineType: diffLine.type
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    } else {
-                        Spacer()
-                    }
+                if !pair.leftText.isEmpty {
+                    HighlightedText(
+                        text: pair.leftText,
+                        changes: pair.leftChanges,
+                        lineType: pair.type == .removed || pair.type == .modified ? pair.type : .unchanged
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity)
             }
-            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 3)
+            .background(
+                pair.type == .removed ? Color.red.opacity(0.1) :
+                (pair.type == .modified ? Color.orange.opacity(0.1) : Color.clear)
+            )
             
-            Divider()
+            // Right side
+            HStack(spacing: 4) {
+                Text(pair.rightLineNumber > 0 ? "\(pair.rightLineNumber)" : " ")
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .frame(width: 25, alignment: .trailing)
+                
+                if !pair.rightText.isEmpty {
+                    HighlightedText(
+                        text: pair.rightText,
+                        changes: pair.rightChanges,
+                        lineType: pair.type == .added || pair.type == .modified ? pair.type : .unchanged
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Spacer()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 3)
+            .background(
+                pair.type == .added ? Color.green.opacity(0.1) :
+                (pair.type == .modified ? Color.orange.opacity(0.1) : Color.clear)
+            )
         }
         .padding(.horizontal)
+        
+        Divider()
     }
 }
 
@@ -337,27 +286,6 @@ struct HighlightedText: View {
         // Default appearance
         attributedString.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
         attributedString.foregroundColor = .primary
-        
-        // Apply the background color to the entire line if needed
-        if lineType == .added || lineType == .removed || lineType == .modified {
-            let backgroundColorOpacity: CGFloat = 0.1
-            let backgroundColor: Color
-            
-            switch lineType {
-            case .added:
-                backgroundColor = Color.green.opacity(backgroundColorOpacity)
-            case .removed:
-                backgroundColor = Color.red.opacity(backgroundColorOpacity)
-            case .modified:
-                backgroundColor = Color.orange.opacity(backgroundColorOpacity)
-            default:
-                backgroundColor = Color.clear
-            }
-            
-            if let range = Range(NSRange(location: 0, length: text.utf16.count), in: attributedString) {
-                attributedString[range].backgroundColor = backgroundColor
-            }
-        }
         
         // Apply highlights only to the changed portions
         for change in changes {
