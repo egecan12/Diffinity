@@ -76,23 +76,41 @@ struct ContentView: View {
                 }
                 .padding()
                 
-                HStack(spacing: 0) {
-                    DiffTextView(
-                        text: $leftText,
-                        comparisonText: $rightText,
-                        side: .left,
-                        isChecking: $isChecking,
-                        diffStats: $diffStats
-                    )
-                    Divider()
-                        .background(Color(NSColor.separatorColor))
-                    DiffTextView(
-                        text: $rightText,
-                        comparisonText: $leftText,
-                        side: .right,
-                        isChecking: $isChecking,
-                        diffStats: $diffStats
-                    )
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Original text")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                        
+                        Text("Changed text")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                    }
+                    
+                    HStack(spacing: 0) {
+                        DiffTextView(
+                            text: $leftText,
+                            comparisonText: $rightText,
+                            side: .left,
+                            isChecking: $isChecking,
+                            diffStats: $diffStats
+                        )
+                        Divider()
+                            .background(Color(NSColor.separatorColor))
+                        DiffTextView(
+                            text: $rightText,
+                            comparisonText: $leftText,
+                            side: .right,
+                            isChecking: $isChecking,
+                            diffStats: $diffStats
+                        )
+                    }
                 }
                 .padding()
             }

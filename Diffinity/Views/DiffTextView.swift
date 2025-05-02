@@ -10,15 +10,24 @@ struct DiffTextView: NSViewRepresentable {
     
     func makeNSView(context: Context) -> NSView {
         let containerView = NSView()
+        containerView.wantsLayer = true
+        containerView.layer?.cornerRadius = 12
+        containerView.layer?.borderWidth = 1
+        containerView.layer?.borderColor = NSColor.separatorColor.cgColor
+        containerView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         
         // Create line numbers view
         let lineNumbersView = LineNumberView()
         lineNumbersView.translatesAutoresizingMaskIntoConstraints = false
+        lineNumbersView.wantsLayer = true
+        lineNumbersView.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
         containerView.addSubview(lineNumbersView)
         
         // Create scroll view and text view
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.wantsLayer = true
+        scrollView.layer?.cornerRadius = 12
         let textView = CustomTextView()
         
         // Configure text view
@@ -27,7 +36,7 @@ struct DiffTextView: NSViewRepresentable {
         textView.isEditable = true
         textView.isSelectable = true
         textView.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
-        textView.textContainerInset = NSSize(width: 5, height: 5)
+        textView.textContainerInset = NSSize(width: 12, height: 12)
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
@@ -35,6 +44,17 @@ struct DiffTextView: NSViewRepresentable {
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.backgroundColor = .clear
+        
+        // Add modern placeholder text style
+        if textView.string.isEmpty {
+            textView.textStorage?.append(NSAttributedString(
+                string: "Enter text to compare...",
+                attributes: [
+                    .foregroundColor: NSColor.placeholderTextColor,
+                    .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+                ]
+            ))
+        }
         
         // Configure scroll view
         scrollView.documentView = textView
@@ -71,6 +91,10 @@ struct DiffTextView: NSViewRepresentable {
     
     func updateNSView(_ containerView: NSView, context: Context) {
         guard let textView = context.coordinator.textView else { return }
+        
+        // Update container appearance based on theme
+        containerView.layer?.borderColor = NSColor.separatorColor.cgColor
+        containerView.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         
         if !context.coordinator.isEditing && textView.string != text {
             let selectedRange = textView.selectedRange()
@@ -199,6 +223,12 @@ class CustomTextView: NSTextView {
     override func drawBackground(in rect: NSRect) {
         super.drawBackground(in: rect)
     }
+    
+    override var frame: NSRect {
+        didSet {
+            backgroundColor = .clear
+        }
+    }
 }
 
 class LineNumberView: NSView {
@@ -220,10 +250,10 @@ class LineNumberView: NSView {
         for i in 1...lineCount {
             let lineNumber = "\(i)"
             let lineNumberSize = lineNumber.size(withAttributes: attributes)
-            let y = CGFloat(i - 1) * lineNumberSize.height + 5
+            let y = CGFloat(i - 1) * lineNumberSize.height + 12
             
             lineNumber.draw(
-                at: NSPoint(x: bounds.width - lineNumberSize.width - 5, y: y),
+                at: NSPoint(x: bounds.width - lineNumberSize.width - 8, y: y),
                 withAttributes: attributes
             )
         }
